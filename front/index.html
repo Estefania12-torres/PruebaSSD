@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI SQL Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-950 text-slate-300 min-h-screen font-sans">
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="hidden fixed top-0 left-0 w-full bg-red-500/10 text-red-500 border-b border-red-500 p-4 text-center font-medium z-50">
+        <span id="errorMessage"></span>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">
+                AI <span class="text-indigo-500">SQL</span> Dashboard
+            </h1>
+            <p class="text-slate-400">Consulta tu base de datos en lenguaje natural impulsada por agentes inteligentes.</p>
+        </header>
+
+        <!-- Input Section -->
+        <section class="max-w-4xl mx-auto mb-12">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
+                <div class="flex flex-col gap-6">
+                    
+                    <!-- DB Connection Input -->
+                    <div class="flex flex-col gap-2">
+                        <label for="dbConnectionStringInput" class="text-sm font-semibold text-slate-400 ml-1">Cadena de Conexión de la Base de Datos</label>
+                        <input 
+                            id="dbConnectionStringInput" 
+                            type="text" 
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                            placeholder="postgresql://usuario:password@localhost:5432/mi_bd"
+                        >
+                    </div>
+
+                    <!-- Natural Query Input -->
+                    <div class="flex flex-col gap-2">
+                        <label for="naturalQueryInput" class="text-sm font-semibold text-slate-400 ml-1">Consulta en Lenguaje Natural</label>
+                        <textarea 
+                            id="naturalQueryInput" 
+                            rows="4" 
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none resize-none"
+                            placeholder="Ej: Mostrar los últimos 10 usuarios registrados en la base de datos..."
+                        ></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button 
+                            id="submitQueryBtn" 
+                            class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span>Ejecutar Consulta</span>
+                            <div id="loadingSpinner" class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section id="resultsPanel" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+            <!-- Data Table Panel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-slate-800 bg-slate-800/50">
+                    <h2 class="text-lg font-semibold text-white">Resultados de Datos</h2>
+                </div>
+                <div class="overflow-x-auto p-4">
+                    <table id="dataResultTable" class="w-full text-left border-collapse divide-y divide-slate-800">
+                        <thead class="text-slate-400 uppercase text-xs font-bold">
+                            <tr id="tableHeader"></tr>
+                        </thead>
+                        <tbody id="tableBody" class="text-sm divide-y divide-slate-800">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SQL Code Panel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-slate-800 bg-slate-800/50">
+                    <h2 class="text-lg font-semibold text-white">SQL Generado & Auditado</h2>
+                </div>
+                <div class="p-4 bg-black">
+                    <pre class="overflow-x-auto"><code id="sqlCodeBlock" class="text-indigo-400 font-mono text-sm whitespace-pre-wrap"></code></pre>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

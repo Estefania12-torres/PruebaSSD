@@ -1,0 +1,87 @@
+schema: spec-driven
+
+# Project context for Multi-Agent NL2SQL Architecture
+context: |
+  SmartSQL Assistant:
+  Sistema Multiagente Basado en LLMs y RAG para la Generación Segura de Consultas SQL a partir de Lenguaje Natural en Bases de Datos Relacionales 
+  Dominio:
+  - Interfaz web para usuarios no técnicos que necesitan consultar bases de datos relacionales sin saber SQL.
+  - Extracción y análisis automático de esquemas de bases de datos relacionales (tablas, columnas y tipos de datos) en tiempo real.
+  - Pipeline de Recuperación Aumentada por Generación (RAG) para metadatos, aislando y filtrando estructuralmente solo las tablas relevantes para reducir el contexto enviado a los LLM.
+  - Analista de Cumplimiento (Compliance) integrado para la detección automática y anonimización de campos sensibles o PII (Información Personal Identificable).
+  - Generación automatizada de consultas SQL de solo lectura (instrucciones SELECT) con inyección dinámica de cláusulas de seguridad (LIMIT 100).
+  - Doble auditoría de seguridad automatizada (Validación dura mediante scripts y validación semántica contra inyecciones SQL mediante agentes especializados).
+  - Desanonimización controlada a nivel de infraestructura local y renderizado de resultados dinámicos basados en plantillas generadas por IA.
+
+  Principio de Seguridad Crítico (Zero-Trust):
+  - LOS DATOS REALES DE LAS BASES DE DATOS JAMÁS SE EXPONEN A LOS MODELOS DE IA. Los LLM externos solo operan con metadatos estructurales filtrados o cifrados. La ejecución de la query final y el relleno de la plantilla de respuesta se realizan localmente en el backend seguro.
+
+  Arquitectura:
+  - Backend: Arquitectura Hexagonal (Puertos y Adaptadores) para el aislamiento total de la lógica de negocio.
+  - IA / Orquestación: Arquitectura de 23 nodos en n8n mediante un flujo sincrónico Multi-Agente RAG.
+
+  Backend Stack:
+  - Runtime: Node.js (v18.x o superior)
+  - Framework: Express para la exposición de endpoints HTTP (In Adapters)
+  - Query Builder: Knex.js para la conexión e interactividad dinámica con bases de datos clientes (Out Adapters)
+  - Cliente HTTP: Axios para invocar el Webhook de n8n
+  - Variables de entorno: dotenv
+  
+  Frontend Stack:
+  - Framework: Html/CSS/JavaScript 
+  - Aplicar principios de diseño responsivo.
+  - Aplica principios de UX/UI para la visualización clara de resultados tabulares y textuales.
+  - Los siete principios fundamentales del diseño de Don Norman para la usabilidad.
+  
+  
+  IA & Automatización Stack (n8n):
+  - Servidor: n8n v1+ con integración avanzada de LangChain Core, Vector Store InMemory y nodos de agentes.
+  - Modelos de Embeddings: models/gemini-embedding-001 (Google Gemini)
+  - Modelos de Contexto y PII: models/gemini-3.1-flash-lite y models/gemini-2.5-flash-lite
+  - Modelos de Razonamiento y Generador SQL: models/qwen/qwen3-32b (vía Groq API)
+  - Modelos de Auditoría de Seguridad: Defog (openai/gpt-oss-120b vía Groq API)
+
+  Bases de Datos Compatibles (Soporte Nativo):
+  - PostgreSQL, MySQL, SQLite, Oracle y SQL Server.
+
+  Reglas de Desarrollo:
+  - Aplicar rígidamente la Arquitectura Hexagonal separando `src/core/domain`, `src/core/useCases`, `src/core/ports` y `src/adapters`.
+  - Toda consulta generada debe finalizar obligatoriamente con la cláusula `LIMIT 100;` por protección operativa.
+  - Seguir Clean Code y documentar endpoints API utilizando estándares de OpenAPI/Swagger.
+  - Control de versiones con Git siguiendo convenciones de commits (Conventional Commits).
+  - Aplicar Principios SOLID.
+  - Aplicar Principios DRY.
+  - Seguir Clean Code.
+  - Implementar control de errores y manejo de excepciones robusto.
+  - Implementar validación de datos tanto en frontend como en backend.
+  - Aplicar principios de diseño de API RESTful (version, recursos, verbos HTTP, códigos de estado). 
+  - Escribir tests unitarios, de integración y end-to-end.
+  - Priorizar la seguridad (OWASP Top 10) y el rendimiento.
+  - Control de versiones con Git, siguiendo convenciones de commits (Conventional Commits).
+
+  Documentación:
+  - Documentar la arquitectura y diseño del sistema con ADR, C4Model, UML.
+  - Documentar la API RESTful con Swagger/OpenAPI.
+
+  PROCESO SDD OBLIGATORIO:
+  1. No generar spec.md sin aprobación explícita del proposal.
+  2. No generar design.md sin aprobación explícita del spec.
+  3. No generar tasks.md sin aprobación explícita del design.
+  4. Detenerse después de cada artefacto y solicitar validación del usuario antes de proceder.
+
+rules:
+  proposal:
+    - Must ask clarification questions regarding database scopes before generating proposal.
+    - Must include a "Security Boundaries & Non-goals" section detail what data is excluded from the LLM.
+    - Keep proposals under 600 words.
+  specs:
+    - Must use gherkin-authoring skill to write clear acceptance criteria for user intents.
+    - Must map user natural language edge cases (e.g., "give me the totals of this month").
+  design:
+    - Must use c4-architecture skill to map the interactions between Express controllers, Core Use Cases, and n8n Webhooks.
+    - Must include an ASCII or diagram breakdown of the internal Hexagonal architecture directories.
+  tasks:
+    - Descomponer en tareas de máximo 45 minutos de implementación.
+    - Separar explícitamente las tareas de Node.js (Core/Adapters) y las configuraciones de Nodos/Prompts de n8n.
+    - Incluir obligatoriamente tareas de pruebas unitarias parametrizadas para Knex.js usando diferentes motores relacionales (especialmente SQLite/PostgreSQL para testing).
+    - Verificar que ninguna tarea exponga variables de conexión o credenciales hacia los flujos de n8n.
