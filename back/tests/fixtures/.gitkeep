@@ -1,0 +1,2 @@
+// Este archivo existe para que Jest cree el directorio de fixtures.
+// El test de integración (KnexDatabaseAdapter) crea automáticamente test.db aquí.

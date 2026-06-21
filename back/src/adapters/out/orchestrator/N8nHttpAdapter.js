@@ -12,12 +12,10 @@ class N8nHttpAdapter extends OrchestratorPort {
   async triggerWorkflow(connectionString, question, schemaContext) {
     try {
       const payload = {
-        body: {
-          connection_string: connectionString,
-          question: question,
-          schema_context: schemaContext,
-          backend_url: `http://localhost:${constants.PORT}`
-        }
+        connection_string: connectionString,
+        question: question,
+        schema_context: schemaContext,
+        backend_url: `http://localhost:${constants.PORT}`
       };
 
       const headers = {

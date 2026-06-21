@@ -1,98 +1,276 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI SQL Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI SQL Dashboard · NL2SQL Agent System</title>
+  <meta name="description" content="Consulta tu base de datos en lenguaje natural mediante agentes de inteligencia artificial orquestados por n8n." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* Asegurar que Tailwind no pise nuestra paleta custom Slate/Purple */
+    body { background-color: #0F172A !important; color: #F8FAFC !important; }
+    .bg-surface { background-color: #1E293B !important; }
+    .border-muted { border-color: #334155 !important; }
+    .text-secondary { color: #94A3B8 !important; }
+    .text-muted { color: #64748B !important; }
+    .accent-purple { color: #8B5CF6 !important; }
+    .bg-accent-purple-light { background-color: rgba(139, 92, 246, 0.15) !important; }
+    .bg-success-light { background-color: rgba(16, 185, 129, 0.15) !important; }
+    .text-success { color: #10B981 !important; }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-300 min-h-screen font-sans">
+<body class="min-h-screen font-sans antialiased">
 
-    <!-- Error Banner -->
-    <div id="errorBanner" class="hidden fixed top-0 left-0 w-full bg-red-500/10 text-red-500 border-b border-red-500 p-4 text-center font-medium z-50">
-        <span id="errorMessage"></span>
+  <!-- ===== MODAL: CONFIGURAR CONEXIÓN ===== -->
+  <div id="connectionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(8px);"></div>
+    <div class="relative w-full max-w-md rounded-2xl p-8 flex flex-col gap-6 modal-appear bg-surface"
+         style="border:1px solid #334155; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+
+      <div class="flex flex-col items-center gap-4 text-center">
+        <div class="w-14 h-14 rounded-xl flex items-center justify-center"
+             style="background-color:#8B5CF6; box-shadow:0 10px 15px -3px rgba(139,92,246,0.3);">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold">Configurar Conexión</h2>
+          <p class="text-sm mt-1 text-secondary">Ingresa la cadena de conexión a tu base de datos.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="connection-string-input" class="text-xs font-semibold uppercase tracking-wider text-muted">Cadena de Conexión</label>
+        <div class="relative">
+          <div class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+          <input id="connection-string-input" type="password" autocomplete="off" spellcheck="false"
+            placeholder="postgresql://usuario:contraseña@host:5432/db"
+            class="input-dark w-full rounded-xl py-3 pl-10 pr-4 text-sm font-mono" />
+        </div>
+        <p id="conn-error" class="hidden text-xs flex items-center gap-1.5" style="color:#EF4444;">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+          <span id="conn-error-text"></span>
+        </p>
+      </div>
+
+      <button id="save-connection-btn" class="btn-primary w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm">
+        <span>Guardar y Conectar</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+        </svg>
+      </button>
+
+      <p class="text-xs text-center text-muted">🔒 Almacenada solo en tu navegador. Nunca se comparte.</p>
+    </div>
+  </div>
+
+  <!-- ===== CONFIRM DELETE DIALOG ===== -->
+  <div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(8px);"></div>
+    <div class="relative w-full max-w-sm rounded-2xl p-6 flex flex-col gap-5 modal-appear bg-surface"
+         style="border:1px solid #334155; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:rgba(239,68,68,0.15);">
+          <svg class="w-5 h-5" style="color:#EF4444;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sm">Eliminar conexión</h3>
+          <p class="text-xs mt-1 text-secondary">Esta acción eliminará tu cadena de conexión. Tendrás que volver a configurarla.</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button id="cancel-delete-btn" class="flex-1 py-2 px-4 rounded-xl text-sm font-medium" style="background:#334155; color:#F8FAFC;">Cancelar</button>
+        <button id="confirm-delete-btn" class="flex-1 py-2 px-4 rounded-xl text-sm font-medium" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#EF4444;">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP ===== -->
+  <div id="app" class="hidden flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <header class="sticky top-0 z-40 bg-surface border-b border-muted">
+      <div class="max-w-[1100px] mx-auto px-6 h-16 flex items-center justify-between gap-4">
+
+        <!-- Brand -->
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+               style="background-color:#8B5CF6;">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+            </svg>
+          </div>
+          <div class="hidden sm:block">
+            <p class="text-sm font-semibold leading-none">AI SQL Dashboard</p>
+            <p class="text-[11px] mt-0.5 text-secondary">NL2SQL Agent System</p>
+          </div>
+        </div>
+
+        <!-- Connection badge -->
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 rounded-xl px-3 py-1.5 min-w-0"
+               style="background:rgba(15,23,42,0.5); border:1px solid #334155;">
+            <div class="w-2 h-2 rounded-full shrink-0 glow-pulse" style="background-color:#10B981;"></div>
+            <span id="conn-display" class="text-xs font-mono truncate max-w-[200px] text-secondary"></span>
+          </div>
+          <button id="edit-conn-btn" title="Editar conexión" class="w-8 h-8 rounded-lg flex items-center justify-center text-secondary transition hover:bg-[#334155] hover:text-white"
+                  style="border:1px solid #334155;">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+            </svg>
+          </button>
+          <button id="delete-conn-btn" title="Eliminar conexión" class="w-8 h-8 rounded-lg flex items-center justify-center transition"
+                  style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#EF4444;">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Error banner -->
+    <div id="errorBanner" class="hidden sticky top-16 z-30 px-6 py-3 text-sm text-center font-medium"
+         style="background:rgba(239,68,68,0.15); color:#EF4444; border-bottom:1px solid rgba(239,68,68,0.3);">
+      <span id="errorMessage"></span>
     </div>
 
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
-        <!-- Header -->
-        <header class="text-center mb-12">
-            <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">
-                AI <span class="text-indigo-500">SQL</span> Dashboard
-            </h1>
-            <p class="text-slate-400">Consulta tu base de datos en lenguaje natural impulsada por agentes inteligentes.</p>
-        </header>
+    <!-- Main -->
+    <main class="flex-1 max-w-[1100px] mx-auto w-full px-6 py-8 flex flex-col gap-6">
 
-        <!-- Input Section -->
-        <section class="max-w-4xl mx-auto mb-12">
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
-                <div class="flex flex-col gap-6">
-                    
-                    <!-- DB Connection Input -->
-                    <div class="flex flex-col gap-2">
-                        <label for="dbConnectionStringInput" class="text-sm font-semibold text-slate-400 ml-1">Cadena de Conexión de la Base de Datos</label>
-                        <input 
-                            id="dbConnectionStringInput" 
-                            type="text" 
-                            class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
-                            placeholder="postgresql://usuario:password@localhost:5432/mi_bd"
-                        >
-                    </div>
+      <!-- Query card -->
+      <section class="bg-surface rounded-2xl p-6 flex flex-col gap-5 border border-muted"
+               style="border-color:#334155;">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-accent-purple-light">
+            <svg class="w-4 h-4 accent-purple" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-base font-semibold leading-none">Nueva Consulta</h1>
+            <p class="text-xs mt-1 text-secondary">Describe en lenguaje natural lo que quieres saber de tu base de datos.</p>
+          </div>
+        </div>
 
-                    <!-- Natural Query Input -->
-                    <div class="flex flex-col gap-2">
-                        <label for="naturalQueryInput" class="text-sm font-semibold text-slate-400 ml-1">Consulta en Lenguaje Natural</label>
-                        <textarea 
-                            id="naturalQueryInput" 
-                            rows="4" 
-                            class="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none resize-none"
-                            placeholder="Ej: Mostrar los últimos 10 usuarios registrados en la base de datos..."
-                        ></textarea>
-                    </div>
-                    
-                    <div class="flex justify-end">
-                        <button 
-                            id="submitQueryBtn" 
-                            class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <span>Ejecutar Consulta</span>
-                            <div id="loadingSpinner" class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        </button>
-                    </div>
-                </div>
+        <div class="flex flex-col gap-3">
+          <textarea id="query-input" name="natural_query" rows="4" maxlength="2000"
+            placeholder="Ej: Mostrar los últimos 10 clientes registrados ordenados por fecha..."
+            class="input-dark w-full rounded-xl p-4 text-sm font-mono resize-none leading-relaxed"></textarea>
+
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span id="char-counter" class="text-xs text-muted">0 / 2000</span>
+              <div id="sql-warning" class="hidden items-center gap-1.5 text-xs rounded-lg px-2.5 py-1"
+                   style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:#F59E0B;">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                <span>Parece que estás ingresando SQL directo. Usa lenguaje natural.</span>
+              </div>
             </div>
-        </section>
-
-        <!-- Results Section -->
-        <section id="resultsPanel" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
-            <!-- Data Table Panel -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-                <div class="p-4 border-b border-slate-800 bg-slate-800/50">
-                    <h2 class="text-lg font-semibold text-white">Resultados de Datos</h2>
-                </div>
-                <div class="overflow-x-auto p-4">
-                    <table id="dataResultTable" class="w-full text-left border-collapse divide-y divide-slate-800">
-                        <thead class="text-slate-400 uppercase text-xs font-bold">
-                            <tr id="tableHeader"></tr>
-                        </thead>
-                        <tbody id="tableBody" class="text-sm divide-y divide-slate-800">
-                        </tbody>
-                    </table>
-                </div>
+            
+            <div class="flex items-center gap-3">
+              <p class="text-xs text-muted hidden sm:block">
+                Presiona <kbd>Ctrl</kbd> + <kbd>Enter</kbd> para ejecutar
+              </p>
+              <button id="submit-query-btn" class="btn-primary flex items-center gap-2 text-sm py-2 px-5 rounded-xl">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                </svg>
+                <span id="btn-label">Ejecutar Consulta</span>
+                <div id="loading-spinner" class="hidden w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+              </button>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <!-- SQL Code Panel -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-                <div class="p-4 border-b border-slate-800 bg-slate-800/50">
-                    <h2 class="text-lg font-semibold text-white">SQL Generado & Auditado</h2>
-                </div>
-                <div class="p-4 bg-black">
-                    <pre class="overflow-x-auto"><code id="sqlCodeBlock" class="text-indigo-400 font-mono text-sm whitespace-pre-wrap"></code></pre>
-                </div>
+      <!-- Loading -->
+      <div id="loading-state" class="hidden flex flex-col items-center justify-center gap-4 py-16">
+        <div class="relative w-12 h-12">
+          <div class="absolute inset-0 rounded-full border-2 border-[#8B5CF6]/30 animate-ping"></div>
+          <div class="absolute inset-1 rounded-full border-2 border-transparent border-t-[#8B5CF6] border-r-[#A78BFA] animate-spin"></div>
+          <div class="absolute inset-3 rounded-full bg-accent-purple-light"></div>
+        </div>
+        <div class="text-center">
+          <p class="text-sm font-medium">Orquestando Agentes de IA...</p>
+          <p class="text-xs mt-1 text-secondary">Context Agent → SQL Reasoner → Security Validator</p>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="flex flex-col items-center justify-center gap-3 py-16 rounded-2xl border border-dashed border-[#334155]">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-surface">
+          <svg class="w-6 h-6 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25" />
+          </svg>
+        </div>
+        <p class="text-sm text-secondary">Los resultados aparecerán aquí...</p>
+        <p class="text-xs text-muted">Ingresa una consulta en lenguaje natural y ejecuta.</p>
+      </div>
+
+      <!-- Results (2 columns) -->
+      <section id="results-panel" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- LEFT: Tabla de datos -->
+        <div class="bg-surface rounded-2xl overflow-hidden flex flex-col border border-muted">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-muted">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-4 h-4 accent-purple" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25" />
+              </svg>
+              <h2 class="text-sm font-semibold">Resultados de Datos</h2>
             </div>
-        </section>
-    </div>
+            <span id="row-count" class="text-[11px] font-medium rounded-full px-2.5 py-1 bg-success-light text-success border border-[#10B981]/30">0 filas</span>
+          </div>
+          <div class="overflow-auto flex-1 max-h-[500px]">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead class="sticky top-0 z-10"><tr id="table-header"></tr></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
 
-    <script src="js/app.js"></script>
+        <!-- RIGHT: Respuesta del Agente -->
+        <div class="bg-surface rounded-2xl overflow-hidden flex flex-col border border-muted">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-muted">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-4 h-4 accent-purple" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+              </svg>
+              <h2 class="text-sm font-semibold">Respuesta del Agente</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-medium rounded-full px-2.5 py-1 flex items-center gap-1 bg-success-light text-success border border-[#10B981]/30">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                Validado
+              </span>
+              <button id="copy-sql-btn" title="Copiar respuesta" class="w-7 h-7 rounded-md flex items-center justify-center transition hover:bg-[#334155] text-secondary hover:text-white"
+                      style="border:1px solid #334155;">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-auto p-5" style="background:#0F172A;">
+            <div id="sql-code-block" class="text-[13px] font-mono leading-relaxed text-secondary"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
 </body>
 </html>
